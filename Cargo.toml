@@ -1,0 +1,20 @@
+[package]
+name = "nudge"
+version = "0.1.0"
+license = "MIT/Apache-2.0"
+authors = ["mtak-"]
+edition = "2018"
+keywords = ["panic", "abort", "unwind", "hint", "optimization"]
+categories = ["performance", "optimization"]
+description = "A collection of optimization hints to improve performance"
+repository = "https://github.com/mtak-/nudge"
+homepage = "https://github.com/mtak-/nudge"
+documentation = "https://docs.rs/nudge"
+
+[features]
+default = ["std"]
+nightly = []
+std = []
+
+[dependencies]
+cfg-if = "0.1.9"

@@ -1,0 +1,38 @@
+
+language: rust
+
+cache: cargo
+
+branches:
+  only:
+    - master
+
+matrix:
+  fast_finish: true
+  include:
+  # linux 64bit
+  - rust: nightly
+    name: "nightly-nudge"
+    script: ./ci/run.sh
+  - rust: nightly
+    name: "rustfmt/rustdoc"
+    script: ./ci/meta.sh
+
+  # macos 64bit
+  - os: osx
+    osx_image: xcode10.2
+    rust: nightly
+    name: "nightly-nudge"
+    script: ./ci/run.sh
+  
+  # linux 64bit
+  - rust: 1.35.0
+    name: "1.35.0-nudge"
+    script: ./ci/run.sh
+
+  # macos 64bit
+  - os: osx
+    osx_image: xcode10.2
+  - rust: 1.35.0
+    name: "1.35-nudge-macos"
+    script: ./ci/run.sh
