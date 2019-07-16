@@ -120,7 +120,7 @@ pub unsafe fn unreach() -> ! {
     core::hint::unreachable_unchecked()
 }
 
-/// The same as `std::process::abort`, but annotated as `#[cold]` and usable in `no_std` environments.
+/// The same as `std::process::abort`, but annotated as `#[cold]`, `nounwind`, and usable in `no_std` environments.
 ///
 /// In a `no_std` environment this generates a trap instruction.
 #[cold]

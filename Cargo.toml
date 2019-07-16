@@ -1,6 +1,6 @@
 [package]
 name = "nudge"
-version = "0.2.0"
+version = "0.2.1"
 license = "MIT/Apache-2.0"
 authors = ["mtak-"]
 edition = "2018"
