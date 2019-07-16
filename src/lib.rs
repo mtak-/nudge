@@ -49,18 +49,40 @@ mod internal {
             }
         }
     }
-    cfg_if::cfg_if! {
-        if #[cfg(feature = "std")] {
-            #[inline]
-            pub fn abort() -> ! {
-                std::process::abort()
-            }
-        } else {
-            #[inline(always)]
-            pub extern "C" fn abort() -> ! {
-                panic!()
+
+    // extern "C" gives us nounwind without having to use lto=fat
+    #[cold]
+    pub extern "C" fn nounwind_abort() -> ! {
+        #[inline(always)]
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "std")] {
+                fn abort_impl() -> ! {
+                    std::process::abort()
+                }
+            } else {
+                fn abort_impl() -> ! {
+                    // extern "C" prevents panic from escaping
+                    panic!()
+                }
             }
         }
+        abort_impl()
+    }
+
+    #[inline(always)]
+    pub unsafe extern "C" fn assume_nopanic<F: FnOnce() -> T, T>(f: F) -> T {
+        struct NoPanic;
+        impl Drop for NoPanic {
+            #[inline(always)]
+            fn drop(&mut self) {
+                unsafe { crate::unreach() };
+            }
+        }
+
+        let no_panic = NoPanic;
+        let r = f();
+        core::mem::forget(no_panic);
+        r
     }
 }
 
@@ -102,25 +124,15 @@ pub unsafe fn unreach() -> ! {
 ///
 /// In a `no_std` environment this generates a trap instruction.
 #[cold]
+#[inline(always)]
 pub fn abort() -> ! {
-    crate::internal::abort()
+    crate::internal::nounwind_abort()
 }
 
 /// Assumes a closure will not panic.
 ///
 /// Calls to `core::panicking` functions will still be generated; however, this function is nounwind and panics will cause UB.
 #[inline]
-pub unsafe extern "C" fn assume_nopanic<F: FnOnce() -> T, T>(f: F) -> T {
-    struct NoPanic;
-    impl Drop for NoPanic {
-        #[inline(always)]
-        fn drop(&mut self) {
-            unsafe { crate::unreach() };
-        }
-    }
-
-    let no_panic = NoPanic;
-    let r = f();
-    core::mem::forget(no_panic);
-    r
+pub unsafe fn assume_nopanic<F: FnOnce() -> T, T>(f: F) -> T {
+    crate::internal::assume_nopanic(f)
 }
