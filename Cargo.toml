@@ -17,4 +17,3 @@ nightly = []
 std = []
 
 [dependencies]
-cfg-if = "0.1.9"

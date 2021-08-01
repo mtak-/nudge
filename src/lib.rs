@@ -4,67 +4,71 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod internal {
-    cfg_if::cfg_if! {
-        if #[cfg(feature = "nightly")] {
-            #[inline(always)]
-            pub unsafe fn assume(b: bool) {
-                core::intrinsics::assume(b)
-            }
+    #[cfg(feature = "nightly")]
+    mod implem {
+        #[inline(always)]
+        pub unsafe fn assume(b: bool) {
+            core::intrinsics::assume(b)
+        }
 
-            #[inline(always)]
-            pub fn unlikely(b: bool) -> bool {
-                core::intrinsics::unlikely(b)
-            }
+        #[inline(always)]
+        pub fn unlikely(b: bool) -> bool {
+            core::intrinsics::unlikely(b)
+        }
 
-            #[inline(always)]
-            pub fn likely(b: bool) -> bool {
-                core::intrinsics::likely(b)
-            }
-        } else {
-            #[inline(always)]
-            #[cold]
-            fn cold() {}
-
-            #[inline(always)]
-            pub unsafe fn assume(b: bool) {
-                if !b { crate::unreach() }
-            }
-
-            #[inline(always)]
-            pub fn unlikely(b: bool) -> bool {
-                if b {
-                    cold()
-                }
-                b
-            }
-
-            #[inline(always)]
-            pub fn likely(b: bool) -> bool {
-                if !b {
-                    cold()
-                }
-                b
-            }
+        #[inline(always)]
+        pub fn likely(b: bool) -> bool {
+            core::intrinsics::likely(b)
         }
     }
+
+    #[cfg(not(feature = "nightly"))]
+    mod implem {
+        #[inline(always)]
+        #[cold]
+        fn cold() {}
+
+        #[inline(always)]
+        pub unsafe fn assume(b: bool) {
+            if !b {
+                crate::unreach()
+            }
+        }
+
+        #[inline(always)]
+        pub fn unlikely(b: bool) -> bool {
+            if b {
+                cold()
+            }
+            b
+        }
+
+        #[inline(always)]
+        pub fn likely(b: bool) -> bool {
+            if !b {
+                cold()
+            }
+            b
+        }
+    }
+
+    pub use implem::*;
 
     // extern "C" gives us nounwind without having to use lto=fat
     #[cold]
     pub extern "C" fn nounwind_abort() -> ! {
-        cfg_if::cfg_if! {
-            if #[cfg(feature = "std")] {
-                #[inline(always)]
-                fn abort_impl() -> ! {
-                    std::process::abort()
-                }
-            } else {
-                #[inline(always)]
-                fn abort_impl() -> ! {
-                    // extern "C" prevents panic from escaping
-                    panic!()
-                }
-            }
+        #[cfg(feature = "std")]
+        #[inline(always)]
+        fn abort_impl() -> ! {
+            std::process::abort()
         }
+        #[cfg(not(feature = "std"))]
+        #[inline(always)]
+        fn abort_impl() -> ! {
+            // extern "C" prevents panic from escaping
+            panic!()
+        }
+
         abort_impl()
     }
 
