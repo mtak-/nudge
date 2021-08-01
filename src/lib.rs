@@ -13,17 +13,15 @@ mod internal {
 
             #[inline(always)]
             pub fn unlikely(b: bool) -> bool {
-                // not actually unsafe to say a bool is probably false
-                unsafe { core::intrinsics::unlikely(b) }
+                core::intrinsics::unlikely(b)
             }
 
             #[inline(always)]
             pub fn likely(b: bool) -> bool {
-                // not actually unsafe to say a bool is probably true
-                unsafe { core::intrinsics::likely(b) }
+                core::intrinsics::likely(b)
             }
         } else {
-            #[inline]
+            #[inline(always)]
             #[cold]
             fn cold() {}
 
@@ -53,13 +51,14 @@ mod internal {
     // extern "C" gives us nounwind without having to use lto=fat
     #[cold]
     pub extern "C" fn nounwind_abort() -> ! {
-        #[inline(always)]
         cfg_if::cfg_if! {
             if #[cfg(feature = "std")] {
+                #[inline(always)]
                 fn abort_impl() -> ! {
                     std::process::abort()
                 }
             } else {
+                #[inline(always)]
                 fn abort_impl() -> ! {
                     // extern "C" prevents panic from escaping
                     panic!()
